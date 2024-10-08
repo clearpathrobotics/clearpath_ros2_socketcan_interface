@@ -45,6 +45,7 @@ void SocketCANInterface::send(can_msgs::msg::Frame msg)
   // frame_msg_ = msg.getFrame();
   // frame_msg_.header.stamp = nh_->get_clock()->now();
   // frame_msg_.header.frame_id = "base_link";
+  sleep(0.001);
   can_tx_pub_->publish(msg);
 }
 
