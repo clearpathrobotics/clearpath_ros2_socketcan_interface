@@ -15,7 +15,7 @@ namespace clearpath_ros2_socketcan_interface
 class SocketCANInterface
 {
 public:
-  SocketCANInterface(const std::string& canbus, std::shared_ptr<rclcpp::Node> & nh);
+  SocketCANInterface(const std::string & canbus, std::shared_ptr<rclcpp::Node> & nh);
 
   bool recv(can_msgs::msg::Frame::SharedPtr msg);
   void send(can_msgs::msg::Frame msg);

@@ -3,9 +3,11 @@
 namespace clearpath_ros2_socketcan_interface
 {
 
-SocketCANInterface::SocketCANInterface(const std::string& canbus,
-                                   std::shared_ptr<rclcpp::Node> & nh):
-  canbus_(canbus), nh_(nh)
+SocketCANInterface::SocketCANInterface(
+  const std::string & canbus,
+  std::shared_ptr<rclcpp::Node> & nh
+)
+: canbus_(canbus), nh_(nh)
 {
   // Rx Subscriber
   can_rx_sub_ = nh->create_subscription<can_msgs::msg::Frame>(
@@ -21,8 +23,7 @@ SocketCANInterface::SocketCANInterface(const std::string& canbus,
 
 void SocketCANInterface::rxCallback(const can_msgs::msg::Frame::SharedPtr msg)
 {
-  if (msg)
-  {
+  if (msg) {
     std::lock_guard<std::mutex> lock(receive_queue_mutex_);
     can_rx_message_queue_.push(*msg);
   }
@@ -31,8 +32,7 @@ void SocketCANInterface::rxCallback(const can_msgs::msg::Frame::SharedPtr msg)
 bool SocketCANInterface::recv(can_msgs::msg::Frame::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(receive_queue_mutex_);
-  if (can_rx_message_queue_.empty())
-  {
+  if (can_rx_message_queue_.empty()) {
     return false;
   }
   *msg = can_rx_message_queue_.front();
