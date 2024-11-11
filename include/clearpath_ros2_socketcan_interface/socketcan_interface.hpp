@@ -48,13 +48,20 @@ public:
 
   bool recv(can_msgs::msg::Frame::SharedPtr msg);
   void send(can_msgs::msg::Frame msg);
+  void queue(can_msgs::msg::Frame msg);
+
+  void startSendTimer(uint16_t period_ms);
+  void stopSendTimer();
 
 private:
   std::string canbus_;  // CANBUS interface
   std::shared_ptr<rclcpp::Node> nh_;
+  rclcpp::TimerBase::SharedPtr send_timer_;
 
   std::queue<can_msgs::msg::Frame> can_rx_message_queue_;
-  std::mutex receive_queue_mutex_;
+  std::queue<can_msgs::msg::Frame> can_tx_message_queue_;
+  std::mutex rx_queue_mutex_;
+  std::mutex tx_queue_mutex_;
 
   can_msgs::msg::Frame frame_msg_;
 
@@ -62,6 +69,7 @@ private:
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_rx_sub_;
 
   void rxCallback(const can_msgs::msg::Frame::SharedPtr msg);
+  void sendFromQueue();
 };
 
 }  // namespace clearpath_ros2_socketcan_interface

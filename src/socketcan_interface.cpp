@@ -28,6 +28,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 namespace clearpath_ros2_socketcan_interface
 {
 
+/**
+ * @brief Construct a new SocketCANInterface object
+ * Uses default Rx callback to queue up received messages
+ * 
+ * @param canbus Name of CAN bus
+ * @param nh Pointer to node handle
+ */
 SocketCANInterface::SocketCANInterface(
   const std::string & canbus,
   std::shared_ptr<rclcpp::Node> & nh
@@ -46,6 +53,14 @@ SocketCANInterface::SocketCANInterface(
     rclcpp::SystemDefaultsQoS());
 }
 
+/**
+ * @brief Construct a new SocketCANInterface object
+ * Uses custom callback function to handle received messages
+ * 
+ * @param canbus Name of CAN bus
+ * @param nh Pointer to node handle
+ * @param cb Rx subscriber callback
+ */
 SocketCANInterface::SocketCANInterface(
     const std::string& canbus,
     std::shared_ptr<rclcpp::Node> & nh, 
@@ -65,17 +80,29 @@ SocketCANInterface::SocketCANInterface(
     rclcpp::SystemDefaultsQoS());
 }
 
+/**
+ * @brief Default Rx subscription callback
+ * Queues messages
+ * @param msg Pointer to received message
+ */
 void SocketCANInterface::rxCallback(const can_msgs::msg::Frame::SharedPtr msg)
 {
   if (msg) {
-    std::lock_guard<std::mutex> lock(receive_queue_mutex_);
+    std::lock_guard<std::mutex> lock(rx_queue_mutex_);
     can_rx_message_queue_.push(*msg);
   }
 }
 
+/**
+ * @brief Receive a CAN message frame from the Rx queue
+ * Only works when interface is created with default constructor
+ * @param msg Message pointer to fill with new message
+ * @return true on success
+ * @return false if queue is empty
+ */
 bool SocketCANInterface::recv(can_msgs::msg::Frame::SharedPtr msg)
 {
-  std::lock_guard<std::mutex> lock(receive_queue_mutex_);
+  std::lock_guard<std::mutex> lock(rx_queue_mutex_);
   if (can_rx_message_queue_.empty()) {
     return false;
   }
@@ -84,11 +111,65 @@ bool SocketCANInterface::recv(can_msgs::msg::Frame::SharedPtr msg)
   return true;
 }
 
+/**
+ * @brief Queue up a message to be sent at a later time by the wall timer.
+ *
+ * @param msg CAN message frame to send
+ */
+void SocketCANInterface::queue(can_msgs::msg::Frame msg)
+{
+  std::lock_guard<std::mutex> lock(tx_queue_mutex_);
+  can_tx_message_queue_.push(msg);
+}
+
+/**
+ * @brief Stamp and publish a CAN frame message
+ * 
+ * @param msg Message to publish
+ */
 void SocketCANInterface::send(can_msgs::msg::Frame msg)
 {
-  frame_msg_ = msg.getFrame();
-  frame_msg_.header.stamp = nh_->get_clock()->now();
+  msg.header.stamp = nh_->get_clock()->now();
   can_tx_pub_->publish(msg);
+}
+
+/**
+ * @brief Start a wall timer to periodically check for queued Tx messages and send them.
+ * 
+ * @param period_ms Wall timer period
+ */
+void SocketCANInterface::startSendTimer(uint16_t period_ms)
+{
+  if (period_ms == 0)
+  {
+    RCLCPP_WARN(nh_->get_logger(), "Period must be a non-zero value");
+    return;
+  }
+
+  send_timer_ = nh_->create_wall_timer(
+    std::chrono::milliseconds(period_ms), std::bind(&SocketCANInterface::sendFromQueue, this));
+}
+
+/**
+ * @brief Stop the Tx wall timer
+ * 
+ */
+void SocketCANInterface::stopSendTimer()
+{
+  send_timer_->cancel();
+}
+
+/**
+ * @brief Callback for Tx wall timer
+ * 
+ */
+void SocketCANInterface::sendFromQueue()
+{
+  std::lock_guard<std::mutex> lock(tx_queue_mutex_);
+  if (!can_tx_message_queue_.empty()) {
+    send(can_tx_message_queue_.front());
+    can_tx_message_queue_.pop();
+  }
 }
 
 }  // namespace clearpath_ros2_socketcan_interface
