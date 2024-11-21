@@ -3,9 +3,15 @@
 <package format="3">
   <name>clearpath_ros2_socketcan_interface</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="administrator@todo.todo">administrator</maintainer>
+  <description>A ROS 2 socketcan interface.</description>
+
+  <maintainer email="lcamero@clearpathrobotics.com">Luis Camero</maintainer>
+  <maintainer email="rkreinin@clearpathrobotics.com">Roni Kreinin</maintainer>
+
   <license>BSD-3-Clause</license>
+
+  <author email="lcamero@clearpathrobotics.com">Luis Camero</author>
+  <author email="rkreinin@clearpathrobotics.com">Roni Kreinin</author>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
