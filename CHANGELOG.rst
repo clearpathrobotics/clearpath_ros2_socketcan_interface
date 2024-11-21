@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2024-11-21)
+------------------
 * Change CI to Humble.
 * Added README.
 * Disabled copyright tests.
