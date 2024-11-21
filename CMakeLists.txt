@@ -27,6 +27,10 @@ target_include_directories(socketcan_interface PUBLIC
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(socketcan_interface PRIVATE "CLEARPATH_ROS2_SOCKETCAN_INTERFACE_BUILDING_LIBRARY")
 
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 install(
   DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
