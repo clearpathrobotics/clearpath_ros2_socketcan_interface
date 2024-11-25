@@ -40,7 +40,6 @@ from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
 
 
-
 def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     interface = LaunchConfiguration('interface')
