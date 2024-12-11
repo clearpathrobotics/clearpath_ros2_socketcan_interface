@@ -91,7 +91,7 @@ def generate_launch_description():
     node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_receiver_node_exe',
-        name='socket_can_receiver',
+        name=[interface, '_socket_can_receiver'],
         namespace=namespace,
         parameters=[{
             'interface': interface,
