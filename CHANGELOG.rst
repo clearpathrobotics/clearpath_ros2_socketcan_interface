@@ -2,6 +2,11 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add our own launch files that allow us to change namespaces
+* Contributors: Luis Camero
+
 1.0.0 (2024-11-21)
 ------------------
 * Change CI to Humble.
