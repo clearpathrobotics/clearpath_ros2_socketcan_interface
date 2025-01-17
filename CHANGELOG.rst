@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.1 (2025-01-17)
+------------------
 * Lint launch files (`#4 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/4>`_)
 * Prefix node names with can interface
 * Add our own launch files that allow us to change namespaces
