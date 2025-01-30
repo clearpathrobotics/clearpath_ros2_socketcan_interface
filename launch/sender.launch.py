@@ -90,10 +90,10 @@ def generate_launch_description():
         }],
         remappings=[('to_can_bus', to_can_bus_topic)],
         output='screen')
-    
+
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ', 
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ',
               FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )

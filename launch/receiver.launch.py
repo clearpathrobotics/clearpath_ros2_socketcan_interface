@@ -105,7 +105,7 @@ def generate_launch_description():
 
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ', 
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ',
               FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
