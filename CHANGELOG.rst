@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2025-01-31)
+------------------
 * Wait for interface to be up before launching node (`#7 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/7>`_)
   * Wait for interface to be UP before starting node
 * Updated CI to Jazzy. (`#5 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/5>`_)
