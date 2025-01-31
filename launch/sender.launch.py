@@ -29,11 +29,12 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     EmitEvent,
+    ExecuteProcess,
     RegisterEventHandler)
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessStart
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.events import matches_action
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import FindExecutable, LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
@@ -90,6 +91,20 @@ def generate_launch_description():
         remappings=[('to_can_bus', to_can_bus_topic)],
         output='screen')
 
+    # Wait for interface to be up
+    wait_for_can_interface_proc = ExecuteProcess(
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ',
+              FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
+        shell=True
+    )
+
+    launch_node = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=wait_for_can_interface_proc,
+            on_exit=node
+        )
+    )
+
     configure_event = RegisterEventHandler(
         event_handler=OnProcessStart(
             target_action=node,
@@ -130,7 +145,8 @@ def generate_launch_description():
     ld.add_action(arg_auto_configure)
     ld.add_action(arg_auto_activate)
     ld.add_action(arg_to_can_bus_topic)
-    ld.add_action(node)
+    ld.add_action(wait_for_can_interface_proc)
+    ld.add_action(launch_node)
     ld.add_action(configure_event)
     ld.add_action(activate_event)
     return ld
