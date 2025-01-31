@@ -2,6 +2,13 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Wait for interface to be up before launching node (`#7 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/7>`_)
+  * Wait for interface to be UP before starting node
+* Updated CI to Jazzy. (`#5 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/5>`_)
+* Contributors: Roni Kreinin, Tony Baltovski
+
 2.0.1 (2025-01-17)
 ------------------
 * Lint launch files (`#4 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/4>`_)
