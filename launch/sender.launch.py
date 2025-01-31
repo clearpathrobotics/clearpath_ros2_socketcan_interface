@@ -32,9 +32,9 @@ from launch.actions import (
     ExecuteProcess,
     RegisterEventHandler)
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessStart, OnProcessExit
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.events import matches_action
-from launch.substitutions import LaunchConfiguration, FindExecutable
+from launch.substitutions import FindExecutable, LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
