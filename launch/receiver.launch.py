@@ -66,7 +66,7 @@ def generate_launch_description():
 
     arg_interval_sec = DeclareLaunchArgument(
       'interval_sec',
-      default_value='0.01')
+      default_value='1.0')
 
     arg_use_bus_time = DeclareLaunchArgument(
         'use_bus_time',

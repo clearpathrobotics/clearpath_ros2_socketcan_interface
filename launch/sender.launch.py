@@ -64,7 +64,7 @@ def generate_launch_description():
 
     arg_timeout_sec = DeclareLaunchArgument(
       'timeout_sec',
-      default_value='0.01')
+      default_value='1.0')
 
     arg_auto_configure = DeclareLaunchArgument(
       'auto_configure',
