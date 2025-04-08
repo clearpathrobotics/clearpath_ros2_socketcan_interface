@@ -2,6 +2,11 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Increased timeout to 1 second (`#8 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/8>`_)
+* Contributors: Roni Kreinin
+
 2.1.0 (2025-01-31)
 ------------------
 * Wait for interface to be up before launching node (`#7 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/7>`_)
