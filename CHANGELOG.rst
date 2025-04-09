@@ -2,6 +2,11 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Increased timeout to 1 second (`#8 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/8>`_)
+* Contributors: Roni Kreinin
+
 1.0.1 (2024-12-17)
 ------------------
 * Add our own launch files that allow us to change namespaces
