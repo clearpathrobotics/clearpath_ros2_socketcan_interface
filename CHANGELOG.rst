@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.2 (2025-04-09)
+------------------
 * Increased timeout to 1 second (`#8 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/8>`_)
 * Contributors: Roni Kreinin
 
