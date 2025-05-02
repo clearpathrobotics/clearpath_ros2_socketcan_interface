@@ -30,6 +30,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     EmitEvent,
     ExecuteProcess,
+    OpaqueFunction,
     RegisterEventHandler)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit, OnProcessStart
@@ -55,21 +56,21 @@ def launch_setup(context, *args, **kwargs):
     node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_receiver_node_exe',
-        name=[interface, '_socket_can_receiver'],
+        name=f'{interface.perform(context)}_socket_can_receiver',
         namespace=namespace,
         parameters=[{
-            'interface': interface,
-            'enable_can_fd': enable_can_fd,
-            'interval_sec': interval_sec,
-            'filters': filters,
-            'use_bus_time': use_bus_time,
+            'interface': interface.perform(context),
+            'enable_can_fd': enable_can_fd.perform(context),
+            'interval_sec': interval_sec.perform(context),
+            'filters': filters.perform(context),
+            'use_bus_time': use_bus_time.perform(context),
         }],
-        remappings=[('from_can_bus', from_can_bus_topic)],
+        remappings=[('from_can_bus', from_can_bus_topic.perform(context))],
         output='screen')
 
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ',
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface.perform(context), ' | ',
               FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
