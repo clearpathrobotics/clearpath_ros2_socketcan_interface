@@ -41,7 +41,7 @@ from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
 
 
-def generate_launch_description():
+def launch_setup(context, *args, **kwargs):
     namespace = LaunchConfiguration('namespace')
     interface = LaunchConfiguration('interface')
     enable_can_fd = LaunchConfiguration('enable_can_fd')
@@ -51,42 +51,6 @@ def generate_launch_description():
     auto_configure = LaunchConfiguration('auto_configure')
     auto_activate = LaunchConfiguration('auto_activate')
     from_can_bus_topic = LaunchConfiguration('from_can_bus_topic')
-
-    arg_namespace = DeclareLaunchArgument(
-      'namespace',
-      default_value='')
-
-    arg_interface = DeclareLaunchArgument(
-      'interface',
-      default_value='can0')
-
-    arg_enable_can_fd = DeclareLaunchArgument(
-      'enable_can_fd',
-      default_value='false')
-
-    arg_interval_sec = DeclareLaunchArgument(
-      'interval_sec',
-      default_value='1.0')
-
-    arg_use_bus_time = DeclareLaunchArgument(
-        'use_bus_time',
-        default_value='false')
-
-    arg_filters = DeclareLaunchArgument(
-        'filters',
-        default_value='0:0')
-
-    arg_auto_configure = DeclareLaunchArgument(
-      'auto_configure',
-      default_value='true')
-
-    arg_auto_activate = DeclareLaunchArgument(
-      'auto_activate',
-      default_value='true')
-
-    arg_from_can_bus_topic = DeclareLaunchArgument(
-      'from_can_bus_topic',
-      default_value='rx')
 
     node = LifecycleNode(
         package='ros2_socketcan',
@@ -149,7 +113,52 @@ def generate_launch_description():
         condition=IfCondition(auto_activate),
     )
 
+    return [
+        wait_for_can_interface_proc,
+        launch_node,
+        configure_event,
+        activate_event
+    ]
+
+def generate_launch_description():
+    arg_namespace = DeclareLaunchArgument(
+      'namespace',
+      default_value='')
+
+    arg_interface = DeclareLaunchArgument(
+      'interface',
+      default_value='can0')
+
+    arg_enable_can_fd = DeclareLaunchArgument(
+      'enable_can_fd',
+      default_value='false')
+
+    arg_interval_sec = DeclareLaunchArgument(
+      'interval_sec',
+      default_value='1.0')
+
+    arg_use_bus_time = DeclareLaunchArgument(
+        'use_bus_time',
+        default_value='false')
+
+    arg_filters = DeclareLaunchArgument(
+        'filters',
+        default_value='0:0')
+
+    arg_auto_configure = DeclareLaunchArgument(
+      'auto_configure',
+      default_value='true')
+
+    arg_auto_activate = DeclareLaunchArgument(
+      'auto_activate',
+      default_value='true')
+
+    arg_from_can_bus_topic = DeclareLaunchArgument(
+      'from_can_bus_topic',
+      default_value='rx')
+
     ld = LaunchDescription()
+
     ld.add_action(arg_namespace)
     ld.add_action(arg_interface)
     ld.add_action(arg_enable_can_fd)
@@ -159,8 +168,6 @@ def generate_launch_description():
     ld.add_action(arg_auto_configure)
     ld.add_action(arg_auto_activate)
     ld.add_action(arg_from_can_bus_topic)
-    ld.add_action(wait_for_can_interface_proc)
-    ld.add_action(launch_node)
-    ld.add_action(configure_event)
-    ld.add_action(activate_event)
+    ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
+
