@@ -60,10 +60,10 @@ def launch_setup(context, *args, **kwargs):
         namespace=namespace,
         parameters=[{
             'interface': interface.perform(context),
-            'enable_can_fd': enable_can_fd.perform(context),
-            'interval_sec': interval_sec.perform(context),
+            'enable_can_fd': enable_can_fd.perform(context) == 'true',
+            'interval_sec': float(interval_sec.perform(context)),
             'filters': filters.perform(context),
-            'use_bus_time': use_bus_time.perform(context),
+            'use_bus_time': use_bus_time.perform(context) == 'true',
         }],
         remappings=[('from_can_bus', from_can_bus_topic.perform(context))],
         output='screen')
