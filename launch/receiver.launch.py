@@ -70,8 +70,8 @@ def launch_setup(context, *args, **kwargs):
 
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface.perform(context), ' | ',
-              FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface.perform(context),
+              ' | ', FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
 
@@ -120,6 +120,7 @@ def launch_setup(context, *args, **kwargs):
         configure_event,
         activate_event
     ]
+
 
 def generate_launch_description():
     arg_namespace = DeclareLaunchArgument(
@@ -171,4 +172,3 @@ def generate_launch_description():
     ld.add_action(arg_from_can_bus_topic)
     ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
-
