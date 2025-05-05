@@ -30,6 +30,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     EmitEvent,
     ExecuteProcess,
+    OpaqueFunction,
     RegisterEventHandler)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit, OnProcessStart
@@ -41,8 +42,7 @@ from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
 
 
-
-def generate_launch_description():
+def launch_setup(context, *args, **kwargs):
     namespace = LaunchConfiguration('namespace')
     interface = LaunchConfiguration('interface')
     enable_can_fd = LaunchConfiguration('enable_can_fd')
@@ -51,51 +51,23 @@ def generate_launch_description():
     auto_activate = LaunchConfiguration('auto_activate')
     to_can_bus_topic = LaunchConfiguration('to_can_bus_topic')
 
-    arg_namespace = DeclareLaunchArgument(
-      'namespace',
-      default_value='')
-
-    arg_interface = DeclareLaunchArgument(
-      'interface',
-      default_value='can0')
-
-    arg_enable_can_fd = DeclareLaunchArgument(
-      'enable_can_fd',
-      default_value='false')
-
-    arg_timeout_sec = DeclareLaunchArgument(
-      'timeout_sec',
-      default_value='1.0')
-
-    arg_auto_configure = DeclareLaunchArgument(
-      'auto_configure',
-      default_value='true')
-
-    arg_auto_activate = DeclareLaunchArgument(
-      'auto_activate',
-      default_value='true')
-
-    arg_to_can_bus_topic = DeclareLaunchArgument(
-      'to_can_bus_topic',
-      default_value='tx')
-
     node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_sender_node_exe',
-        name=[interface, '_socket_can_sender'],
+        name=f'{interface.perform(context)}_socket_can_sender',
         namespace=namespace,
         parameters=[{
-            'interface': interface,
-            'enable_can_fd': enable_can_fd,
-            'timeout_sec': timeout_sec,
+            'interface': interface.perform(context),
+            'enable_can_fd': enable_can_fd.perform(context) == 'true',
+            'timeout_sec': float(timeout_sec.perform(context)),
         }],
-        remappings=[('to_can_bus', to_can_bus_topic)],
+        remappings=[('to_can_bus', to_can_bus_topic.perform(context))],
         output='screen')
 
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface, ' | ',
-              FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface.perform(context),
+              ' | ', FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
 
@@ -138,6 +110,43 @@ def generate_launch_description():
         condition=IfCondition(auto_activate),
     )
 
+    return [
+        wait_for_can_interface_proc,
+        launch_node,
+        configure_event,
+        activate_event,
+    ]
+
+
+def generate_launch_description():
+    arg_namespace = DeclareLaunchArgument(
+      'namespace',
+      default_value='')
+
+    arg_interface = DeclareLaunchArgument(
+      'interface',
+      default_value='can0')
+
+    arg_enable_can_fd = DeclareLaunchArgument(
+      'enable_can_fd',
+      default_value='false')
+
+    arg_timeout_sec = DeclareLaunchArgument(
+      'timeout_sec',
+      default_value='1.0')
+
+    arg_auto_configure = DeclareLaunchArgument(
+      'auto_configure',
+      default_value='true')
+
+    arg_auto_activate = DeclareLaunchArgument(
+      'auto_activate',
+      default_value='true')
+
+    arg_to_can_bus_topic = DeclareLaunchArgument(
+      'to_can_bus_topic',
+      default_value='tx')
+
     ld = LaunchDescription()
     ld.add_action(arg_namespace)
     ld.add_action(arg_interface)
@@ -146,8 +155,5 @@ def generate_launch_description():
     ld.add_action(arg_auto_configure)
     ld.add_action(arg_auto_activate)
     ld.add_action(arg_to_can_bus_topic)
-    ld.add_action(wait_for_can_interface_proc)
-    ld.add_action(launch_node)
-    ld.add_action(configure_event)
-    ld.add_action(activate_event)
+    ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
