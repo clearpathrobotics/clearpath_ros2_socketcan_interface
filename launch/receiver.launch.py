@@ -25,21 +25,75 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+
+import time
+
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    EmitEvent,
     ExecuteProcess,
     OpaqueFunction,
     RegisterEventHandler)
-from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit, OnProcessStart
-from launch.events import matches_action
 from launch.substitutions import FindExecutable, LaunchConfiguration
 from launch_ros.actions import LifecycleNode
-from launch_ros.event_handlers import OnStateTransition
-from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
+import lifecycle_msgs.srv
+import rclpy
+
+
+def activate_lifecycle_node(context, *args, **kwargs):
+    namespace = LaunchConfiguration('namespace')
+    interface = LaunchConfiguration('interface')
+    auto_configure = LaunchConfiguration('auto_configure')
+    auto_activate = LaunchConfiguration('auto_activate')
+    timeout = LaunchConfiguration('timeout')
+    transition_attempts = LaunchConfiguration('transition_attempts')
+
+    timeout_s = float(timeout.perform(context))
+
+    rclpy.init()
+    node = rclpy.create_node(f'{interface.perform(context)}_socket_can_receiver_activator')
+
+    cli = node.create_client(
+        lifecycle_msgs.srv.ChangeState,
+        f'{namespace.perform(context)}/'
+        f'{interface.perform(context)}_socket_can_receiver/change_state')
+    if not cli.wait_for_service(timeout_sec=timeout_s):
+        node.get_logger().error('Lifecycle service not available.')
+        return
+
+    retry_count = int(transition_attempts.perform(context))
+    req = lifecycle_msgs.srv.ChangeState.Request()
+
+    if auto_configure.perform(context) == 'true':
+        req.transition.id = Transition.TRANSITION_CONFIGURE
+        for i in range(retry_count):
+            future = cli.call_async(req)
+            rclpy.spin_until_future_complete(node, future)
+            if future.result() and future.result().success:
+                node.get_logger().info('Lifecycle node configured successfully.')
+                break
+            else:
+                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
+                time.sleep(timeout_s)
+
+    if auto_activate.perform(context) == 'true':
+        req.transition.id = Transition.TRANSITION_ACTIVATE
+        for i in range(retry_count):
+            future = cli.call_async(req)
+            rclpy.spin_until_future_complete(node, future)
+            if future.result() and future.result().success:
+                node.get_logger().info('Lifecycle node activated successfully.')
+                break
+            else:
+                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
+                time.sleep(timeout_s)
+
+    node.destroy_node()
+    rclpy.shutdown()
+
+    return []
 
 
 def launch_setup(context, *args, **kwargs):
@@ -49,8 +103,6 @@ def launch_setup(context, *args, **kwargs):
     interval_sec = LaunchConfiguration('interval_sec')
     use_bus_time = LaunchConfiguration('use_bus_time')
     filters = LaunchConfiguration('filters')
-    auto_configure = LaunchConfiguration('auto_configure')
-    auto_activate = LaunchConfiguration('auto_activate')
     from_can_bus_topic = LaunchConfiguration('from_can_bus_topic')
 
     node = LifecycleNode(
@@ -86,39 +138,15 @@ def launch_setup(context, *args, **kwargs):
         event_handler=OnProcessStart(
             target_action=node,
             on_start=[
-                EmitEvent(
-                    event=ChangeState(
-                        lifecycle_node_matcher=matches_action(node),
-                        transition_id=Transition.TRANSITION_CONFIGURE,
-                    ),
-                ),
+              OpaqueFunction(function=activate_lifecycle_node)
             ],
         ),
-        condition=IfCondition(auto_configure),
-    )
-
-    activate_event = RegisterEventHandler(
-        event_handler=OnStateTransition(
-            target_lifecycle_node=node,
-            start_state='configuring',
-            goal_state='inactive',
-            entities=[
-                EmitEvent(
-                    event=ChangeState(
-                        lifecycle_node_matcher=matches_action(node),
-                        transition_id=Transition.TRANSITION_ACTIVATE,
-                    ),
-                ),
-            ],
-        ),
-        condition=IfCondition(auto_activate),
     )
 
     return [
         wait_for_can_interface_proc,
         launch_node,
         configure_event,
-        activate_event
     ]
 
 
@@ -159,6 +187,14 @@ def generate_launch_description():
       'from_can_bus_topic',
       default_value='rx')
 
+    arg_timeout = DeclareLaunchArgument(
+      'timeout',
+      default_value='5.0')
+
+    arg_transition_attempts = DeclareLaunchArgument(
+      'transition_attempts',
+      default_value='3')
+
     ld = LaunchDescription()
 
     ld.add_action(arg_namespace)
@@ -170,5 +206,7 @@ def generate_launch_description():
     ld.add_action(arg_auto_configure)
     ld.add_action(arg_auto_activate)
     ld.add_action(arg_from_can_bus_topic)
+    ld.add_action(arg_timeout)
+    ld.add_action(arg_transition_attempts)
     ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
