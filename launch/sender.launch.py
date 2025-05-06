@@ -25,6 +25,9 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+
+import time
+
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -35,10 +38,9 @@ from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import FindExecutable, LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from lifecycle_msgs.msg import Transition
-
 import lifecycle_msgs.srv
 import rclpy
-import time
+
 
 def activate_lifecycle_node(context, *args, **kwargs):
     namespace = LaunchConfiguration('namespace')
@@ -55,7 +57,8 @@ def activate_lifecycle_node(context, *args, **kwargs):
 
     cli = node.create_client(
         lifecycle_msgs.srv.ChangeState,
-        f'{namespace.perform(context)}/{interface.perform(context)}_socket_can_sender/change_state')
+        f'{namespace.perform(context)}/'
+        f'{interface.perform(context)}_socket_can_sender/change_state')
     if not cli.wait_for_service(timeout_sec=timeout_s):
         node.get_logger().error('Lifecycle service not available.')
         return
@@ -64,33 +67,34 @@ def activate_lifecycle_node(context, *args, **kwargs):
     req = lifecycle_msgs.srv.ChangeState.Request()
 
     if auto_configure.perform(context) == 'true':
-      req.transition.id = Transition.TRANSITION_CONFIGURE
-      for i in range(retry_count):
-          future = cli.call_async(req)
-          rclpy.spin_until_future_complete(node, future)
-          if future.result() and future.result().success:
-              node.get_logger().info('Lifecycle node configured successfully.')
-              break
-          else:
-              node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-              time.sleep(timeout_s)
+        req.transition.id = Transition.TRANSITION_CONFIGURE
+        for i in range(retry_count):
+            future = cli.call_async(req)
+            rclpy.spin_until_future_complete(node, future)
+            if future.result() and future.result().success:
+                node.get_logger().info('Lifecycle node configured successfully.')
+                break
+            else:
+                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
+                time.sleep(timeout_s)
 
     if auto_activate.perform(context) == 'true':
-      req.transition.id = Transition.TRANSITION_ACTIVATE
-      for i in range(retry_count):
-          future = cli.call_async(req)
-          rclpy.spin_until_future_complete(node, future)
-          if future.result() and future.result().success:
-              node.get_logger().info('Lifecycle node activated successfully.')
-              break
-          else:
-              node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-              time.sleep(timeout_s)
+        req.transition.id = Transition.TRANSITION_ACTIVATE
+        for i in range(retry_count):
+            future = cli.call_async(req)
+            rclpy.spin_until_future_complete(node, future)
+            if future.result() and future.result().success:
+                node.get_logger().info('Lifecycle node activated successfully.')
+                break
+            else:
+                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
+                time.sleep(timeout_s)
 
     node.destroy_node()
     rclpy.shutdown()
 
     return []
+
 
 def launch_setup(context, *args, **kwargs):
     namespace = LaunchConfiguration('namespace')
