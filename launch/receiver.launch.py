@@ -51,7 +51,7 @@ def activate_lifecycle_node(context, *args, **kwargs):
     timeout_s = float(timeout.perform(context))
 
     rclpy.init()
-    node = rclpy.create_node(f'{namespace.perform(context)}/{interface.perform(context)}_socket_can_receiver_activator')
+    node = rclpy.create_node(f'{interface.perform(context)}_socket_can_receiver_activator')
 
     cli = node.create_client(
         lifecycle_msgs.srv.ChangeState,
