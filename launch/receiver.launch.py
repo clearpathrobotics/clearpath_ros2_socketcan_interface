@@ -36,6 +36,7 @@ from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import FindExecutable, LaunchConfiguration
 from launch_ros.actions import LifecycleNode, Node
 
+
 def launch_setup(context, *args, **kwargs):
     # Apply context and type cast all LaunchConfiguration
     namespace = str(
