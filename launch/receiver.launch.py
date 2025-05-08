@@ -26,9 +26,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import argparse
-import time
-
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -37,65 +34,7 @@ from launch.actions import (
     RegisterEventHandler)
 from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.substitutions import FindExecutable, LaunchConfiguration
-from launch_ros.actions import LifecycleNode
-from lifecycle_msgs.msg import Transition
-import lifecycle_msgs.srv
-import rclpy
-
-
-def activate_lifecycle_node(context, *args, **kwargs):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--namespace', type=str)
-    parser.add_argument('--interface', type=str)
-    parser.add_argument('--auto_configure', type=bool)
-    parser.add_argument('--auto_activate', type=bool)
-    parser.add_argument('--timeout', type=float)
-    parser.add_argument('--transition_attempts', type=int)
-    arg = parser.parse_args(args=args)
-
-    rclpy.init()
-    node = rclpy.create_node(f'{arg.interface}_socket_can_receiver_activator')
-
-    cli = node.create_client(
-        lifecycle_msgs.srv.ChangeState,
-        f'{arg.namespace}/'
-        f'{arg.interface}_socket_can_receiver/change_state')
-    if not cli.wait_for_service(timeout_sec=arg.timeout):
-        node.get_logger().error('Lifecycle service not available.')
-        return
-
-    retry_count = int(arg.transition_attempts)
-    req = lifecycle_msgs.srv.ChangeState.Request()
-
-    if arg.auto_configure:
-        req.transition.id = Transition.TRANSITION_CONFIGURE
-        for i in range(retry_count):
-            future = cli.call_async(req)
-            rclpy.spin_until_future_complete(node, future)
-            if future.result() and future.result().success:
-                node.get_logger().info('Lifecycle node configured successfully.')
-                break
-            else:
-                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-                time.sleep(arg.timeout)
-
-    if arg.auto_activate:
-        req.transition.id = Transition.TRANSITION_ACTIVATE
-        for i in range(retry_count):
-            future = cli.call_async(req)
-            rclpy.spin_until_future_complete(node, future)
-            if future.result() and future.result().success:
-                node.get_logger().info('Lifecycle node activated successfully.')
-                break
-            else:
-                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-                time.sleep(arg.timeout)
-
-    node.destroy_node()
-    rclpy.shutdown()
-
-    return []
-
+from launch_ros.actions import LifecycleNode, Node
 
 def launch_setup(context, *args, **kwargs):
     # Apply context and type cast all LaunchConfiguration
@@ -132,11 +71,13 @@ def launch_setup(context, *args, **kwargs):
     transition_attempts = int(
         LaunchConfiguration('transition_attempts').perform(context))
 
+    name = f'{interface}_socket_can_receiver'
+
     # SocketCAN receiver node
     node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_receiver_node_exe',
-        name=f'{interface}_socket_can_receiver',
+        name=name,
         namespace=namespace,
         parameters=[{
             'interface': interface,
@@ -163,23 +104,27 @@ def launch_setup(context, *args, **kwargs):
         )
     )
 
+    # Activate launch
+    activate_lifecycle_node = Node(
+        name=f'activate_{name}',
+        package='clearpath_ros2_socketcan_interface',
+        executable='activate_lifecycle',
+        namespace=namespace,
+        arguments=[
+            '--namespace', str(namespace),
+            '--node', str(name),
+            '--auto_configure', str(auto_configure),
+            '--auto_activate', str(auto_activate),
+            '--timeout', str(timeout),
+            '--transition_attempts', str(transition_attempts)
+        ]
+    )
+
     # Event to configure and activate node once node is up
     configure_event = RegisterEventHandler(
         event_handler=OnProcessStart(
             target_action=node,
-            on_start=[
-                OpaqueFunction(
-                    function=activate_lifecycle_node,
-                    args=[
-                        '--namespace', str(namespace),
-                        '--interface', str(interface),
-                        '--auto_configure', str(auto_configure),
-                        '--auto_activate', str(auto_activate),
-                        '--timeout', str(timeout),
-                        '--transition_attempts', str(transition_attempts)
-                    ]
-                )
-            ],
+            on_start=[activate_lifecycle_node],
         ),
     )
 
