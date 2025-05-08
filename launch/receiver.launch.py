@@ -26,6 +26,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
 import time
 
 from launch import LaunchDescription
@@ -43,30 +44,30 @@ import rclpy
 
 
 def activate_lifecycle_node(context, *args, **kwargs):
-    namespace = LaunchConfiguration('namespace')
-    interface = LaunchConfiguration('interface')
-    auto_configure = LaunchConfiguration('auto_configure')
-    auto_activate = LaunchConfiguration('auto_activate')
-    timeout = LaunchConfiguration('timeout')
-    transition_attempts = LaunchConfiguration('transition_attempts')
-
-    timeout_s = float(timeout.perform(context))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--namespace', type=str)
+    parser.add_argument('--interface', type=str)
+    parser.add_argument('--auto_configure', type=bool)
+    parser.add_argument('--auto_activate', type=bool)
+    parser.add_argument('--timeout', type=float)
+    parser.add_argument('--transition_attempts', type=int)
+    arg = parser.parse_args(args=args)
 
     rclpy.init()
-    node = rclpy.create_node(f'{interface.perform(context)}_socket_can_receiver_activator')
+    node = rclpy.create_node(f'{arg.interface}_socket_can_receiver_activator')
 
     cli = node.create_client(
         lifecycle_msgs.srv.ChangeState,
-        f'{namespace.perform(context)}/'
-        f'{interface.perform(context)}_socket_can_receiver/change_state')
-    if not cli.wait_for_service(timeout_sec=timeout_s):
+        f'{arg.namespace}/'
+        f'{arg.interface}_socket_can_receiver/change_state')
+    if not cli.wait_for_service(timeout_sec=arg.timeout):
         node.get_logger().error('Lifecycle service not available.')
         return
 
-    retry_count = int(transition_attempts.perform(context))
+    retry_count = int(arg.transition_attempts)
     req = lifecycle_msgs.srv.ChangeState.Request()
 
-    if auto_configure.perform(context) == 'true':
+    if arg.auto_configure:
         req.transition.id = Transition.TRANSITION_CONFIGURE
         for i in range(retry_count):
             future = cli.call_async(req)
@@ -76,9 +77,9 @@ def activate_lifecycle_node(context, *args, **kwargs):
                 break
             else:
                 node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-                time.sleep(timeout_s)
+                time.sleep(arg.timeout)
 
-    if auto_activate.perform(context) == 'true':
+    if arg.auto_activate:
         req.transition.id = Transition.TRANSITION_ACTIVATE
         for i in range(retry_count):
             future = cli.call_async(req)
@@ -88,7 +89,7 @@ def activate_lifecycle_node(context, *args, **kwargs):
                 break
             else:
                 node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-                time.sleep(timeout_s)
+                time.sleep(arg.timeout)
 
     node.destroy_node()
     rclpy.shutdown()
@@ -97,36 +98,64 @@ def activate_lifecycle_node(context, *args, **kwargs):
 
 
 def launch_setup(context, *args, **kwargs):
-    namespace = LaunchConfiguration('namespace')
-    interface = LaunchConfiguration('interface')
-    enable_can_fd = LaunchConfiguration('enable_can_fd')
-    interval_sec = LaunchConfiguration('interval_sec')
-    use_bus_time = LaunchConfiguration('use_bus_time')
-    filters = LaunchConfiguration('filters')
-    from_can_bus_topic = LaunchConfiguration('from_can_bus_topic')
+    # Apply context and type cast all LaunchConfiguration
+    namespace = str(
+        LaunchConfiguration('namespace').perform(context))
 
+    interface = str(
+        LaunchConfiguration('interface').perform(context))
+
+    enable_can_fd = bool(
+        LaunchConfiguration('enable_can_fd').perform(context) == 'true')
+
+    interval_sec = float(
+        LaunchConfiguration('interval_sec').perform(context))
+
+    use_bus_time = bool(
+        LaunchConfiguration('use_bus_time').perform(context) == 'true')
+
+    filters = str(
+        LaunchConfiguration('filters').perform(context))
+
+    from_can_bus_topic = str(
+        LaunchConfiguration('from_can_bus_topic').perform(context))
+
+    auto_configure = bool(
+        LaunchConfiguration('auto_configure').perform(context) == 'true')
+
+    auto_activate = bool(
+        LaunchConfiguration('auto_activate').perform(context) == 'true')
+
+    timeout = float(
+        LaunchConfiguration('timeout').perform(context))
+
+    transition_attempts = int(
+        LaunchConfiguration('transition_attempts').perform(context))
+
+    # SocketCAN receiver node
     node = LifecycleNode(
         package='ros2_socketcan',
         executable='socket_can_receiver_node_exe',
-        name=f'{interface.perform(context)}_socket_can_receiver',
+        name=f'{interface}_socket_can_receiver',
         namespace=namespace,
         parameters=[{
-            'interface': interface.perform(context),
-            'enable_can_fd': enable_can_fd.perform(context) == 'true',
-            'interval_sec': float(interval_sec.perform(context)),
-            'filters': filters.perform(context),
-            'use_bus_time': use_bus_time.perform(context) == 'true',
+            'interface': interface,
+            'enable_can_fd': enable_can_fd == 'true',
+            'interval_sec': interval_sec,
+            'filters': filters,
+            'use_bus_time': use_bus_time == 'true',
         }],
-        remappings=[('from_can_bus', from_can_bus_topic.perform(context))],
+        remappings=[('from_can_bus', from_can_bus_topic)],
         output='screen')
 
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
-        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface.perform(context),
+        cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface,
               ' | ', FindExecutable(name='grep'), ' \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
 
+    # Event to launch node once interface is up
     launch_node = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=wait_for_can_interface_proc,
@@ -134,11 +163,22 @@ def launch_setup(context, *args, **kwargs):
         )
     )
 
+    # Event to configure and activate node once node is up
     configure_event = RegisterEventHandler(
         event_handler=OnProcessStart(
             target_action=node,
             on_start=[
-              OpaqueFunction(function=activate_lifecycle_node)
+                OpaqueFunction(
+                    function=activate_lifecycle_node,
+                    args=[
+                        '--namespace', str(namespace),
+                        '--interface', str(interface),
+                        '--auto_configure', str(auto_configure),
+                        '--auto_activate', str(auto_activate),
+                        '--timeout', str(timeout),
+                        '--transition_attempts', str(transition_attempts)
+                    ]
+                )
             ],
         ),
     )
