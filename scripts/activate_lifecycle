@@ -54,16 +54,24 @@ def main(args=None):
         ChangeState,
         f'/{arg.namespace}/'
         f'{arg.node}/change_state')
-    if not cli.wait_for_service(timeout_sec=arg.timeout):
-        node.get_logger().error('Lifecycle service not available.')
+
+    available = False
+    for i in range(arg.transition_attempts):
+        if cli.wait_for_service(timeout_sec=arg.timeout):
+            available = True
+            break
+        node.get_logger().error(
+            f'Lifecycle service not available. Trying again in {arg.timeout}...')
+    if not available:
+        node.get_logger().error(
+            f'Lifecycle service not available after {arg.transition_attempts}')
         return
 
-    retry_count = int(arg.transition_attempts)
     req = ChangeState.Request()
 
     if arg.auto_configure:
         req.transition.id = Transition.TRANSITION_CONFIGURE
-        for i in range(retry_count):
+        for i in range(arg.transition_attempts):
             future = cli.call_async(req)
             rclpy.spin_until_future_complete(node, future)
             if future.result() and future.result().success:
@@ -75,7 +83,7 @@ def main(args=None):
 
     if arg.auto_activate:
         req.transition.id = Transition.TRANSITION_ACTIVATE
-        for i in range(retry_count):
+        for i in range(arg.transition_attempts):
             future = cli.call_async(req)
             rclpy.spin_until_future_complete(node, future)
             if future.result() and future.result().success:
