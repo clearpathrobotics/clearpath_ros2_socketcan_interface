@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.2 (2025-05-20)
+------------------
 * Fix: Use script instead of OpaqueFunction (`#12 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/12>`_)
   * Use script instead of OpaqueFunction
   * Add missing line
