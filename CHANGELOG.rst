@@ -2,6 +2,13 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix: Spin Timeout (`#13 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/13>`_)
+  * Add timeout to spin to prevent script from waiting when node has failed
+  * Update log to match appropriate action
+* Contributors: luis-camero
+
 2.1.2 (2025-05-20)
 ------------------
 * Fix: Use script instead of OpaqueFunction (`#12 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/12>`_)
