@@ -68,30 +68,46 @@ def main(args=None):
         return
 
     req = ChangeState.Request()
+    configured = False
+    activated = False
 
     if arg.auto_configure:
         req.transition.id = Transition.TRANSITION_CONFIGURE
         for i in range(arg.transition_attempts):
+            node.get_logger().info(
+                f'Attempt {i+1}, requesting lifecycle node transition to configured')
             future = cli.call_async(req)
-            rclpy.spin_until_future_complete(node, future)
+            rclpy.spin_until_future_complete(node, future, timeout_sec=arg.timeout)
             if future.result() and future.result().success:
                 node.get_logger().info('Lifecycle node configured successfully.')
+                configured = True
+                break
+            else:
+                node.get_logger().warn(f'Configuration attempt {i+1} failed. Retrying...')
+                time.sleep(arg.timeout)
+
+    if not configured:
+        node.get_logger().error(
+            f'Failed to configure the lifecycle node after {arg.transition_attempts} attempts')
+
+    if configured and arg.auto_activate:
+        req.transition.id = Transition.TRANSITION_ACTIVATE
+        for i in range(arg.transition_attempts):
+            node.get_logger().info(
+                f'Attempt {i+1}, requesting lifecycle node transition to activated')
+            future = cli.call_async(req)
+            rclpy.spin_until_future_complete(node, future, timeout_sec=arg.timeout)
+            if future.result() and future.result().success:
+                node.get_logger().info('Lifecycle node activated successfully.')
+                activated = True
                 break
             else:
                 node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
                 time.sleep(arg.timeout)
 
-    if arg.auto_activate:
-        req.transition.id = Transition.TRANSITION_ACTIVATE
-        for i in range(arg.transition_attempts):
-            future = cli.call_async(req)
-            rclpy.spin_until_future_complete(node, future)
-            if future.result() and future.result().success:
-                node.get_logger().info('Lifecycle node activated successfully.')
-                break
-            else:
-                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
-                time.sleep(arg.timeout)
+    if configured and not activated:
+        node.get_logger().error(
+            f'Failed to activate the lifecycle node after {arg.transition_attempts} attempts')
 
     node.destroy_node()
     rclpy.shutdown()
