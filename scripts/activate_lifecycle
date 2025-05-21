@@ -83,7 +83,7 @@ def main(args=None):
                 configured = True
                 break
             else:
-                node.get_logger().warn(f'Activation attempt {i+1} failed. Retrying...')
+                node.get_logger().warn(f'Configuration attempt {i+1} failed. Retrying...')
                 time.sleep(arg.timeout)
 
     if not configured:
