@@ -11,7 +11,7 @@ assignees: clearpathrobotics/clearpath-platform-team
  - OS: (e.g. Ubuntu 22.04, Ubuntu 24.04)
  - ROS 2 Distro: (e.g. Humble, Jazzy)
  - Built from source or installed:
- - Package version: (if from repository, give version from `sudo dpkg -s ros-$ROS_DISTRO-clearpath_ros2_socketcan_interface`, if from source, give commit hash)
+ - Package version: (if from repository, give version from `sudo dpkg -s ros-$ROS_DISTRO-clearpath-ros2-socketcan-interface`, if from source, give commit hash)
 
 
  **Expected behaviour**
