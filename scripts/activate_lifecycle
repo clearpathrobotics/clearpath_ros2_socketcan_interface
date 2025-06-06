@@ -50,10 +50,16 @@ def main(args=None):
     rclpy.init()
     node = rclpy.create_node(f'activate_{arg.node}')
 
-    cli = node.create_client(
-        ChangeState,
-        f'/{arg.namespace}/'
-        f'{arg.node}/change_state')
+    if arg.namespace == '/':
+        cli = node.create_client(
+            ChangeState,
+            f'{arg.namespace}'
+            f'{arg.node}/change_state')
+    else:
+        cli = node.create_client(
+            ChangeState,
+            f'/{arg.namespace}/'
+            f'{arg.node}/change_state')
 
     available = False
     for i in range(arg.transition_attempts):
