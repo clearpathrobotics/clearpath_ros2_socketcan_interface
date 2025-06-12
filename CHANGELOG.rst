@@ -2,8 +2,8 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.4 (2025-06-12)
+------------------
 * Fixed using a global namespace.
 * Match package name
 * Fix typos in issue templates
