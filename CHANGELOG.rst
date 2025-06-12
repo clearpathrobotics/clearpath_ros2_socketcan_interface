@@ -2,6 +2,13 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixed using a global namespace.
+* Match package name
+* Fix typos in issue templates
+* Contributors: Hilary, Tony Baltovski
+
 2.1.3 (2025-05-21)
 ------------------
 * Fix: Spin Timeout (`#13 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/13>`_)
