@@ -93,7 +93,7 @@ def launch_setup(context, *args, **kwargs):
     # Wait for interface to be up
     wait_for_can_interface_proc = ExecuteProcess(
         cmd=[['until ', FindExecutable(name='ip'), ' link show ', interface,
-              ' | ', FindExecutable(name='grep'), ' \"state UNKNOWN\"', '; do sleep 1; done']],
+              ' | ', FindExecutable(name='grep'), ' -e \"state UNKNOWN\" -e \"state UP\"', '; do sleep 1; done']],
         shell=True
     )
 
