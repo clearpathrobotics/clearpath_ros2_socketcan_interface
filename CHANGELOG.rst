@@ -2,6 +2,11 @@
 Changelog for package clearpath_ros2_socketcan_interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added UNKNOWN to can enabling condition. (`#17 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/17>`_)
+* Contributors: Tony Baltovski
+
 1.0.3 (2025-07-23)
 ------------------
 * Backports (`#16 <https://github.com/clearpathrobotics/clearpath_ros2_socketcan_interface/issues/16>`_)
